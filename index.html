@@ -12,7 +12,7 @@
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   </head>
-  <body>
+  <body onload="WebGLStart()">
 
     <div class="row">
       <div id="canvas_container">
@@ -28,9 +28,13 @@
             <!-- equation input -->
             <label for="eqn">f(z) = </label> 
             <input id="eqn" type="text" onkeyup="parseEQ()" placeholder="e ^ z">
+            <br>
+            <div id="error" style="color: red"></div>
+            <br>
         </div>
         <div class="col-7">
             <!-- MAIN WEBGL DISPLAY -->
+            <canvas id="canvas"></canvas>
         </div>
         <div class="col-2" style="padding: 2.5%">
             <!-- TOGGLES AND DISPLAY SETTINGS -->
@@ -40,7 +44,9 @@
     </div>
 
     <script src="resources/js/math.js"></script>
+    <script src="resources/js/globals.js"></script>
     <script src="resources/js/parse.js"></script>
+    <script src="resources/js/plot.js"></script>
 
   </body>
 </html>
