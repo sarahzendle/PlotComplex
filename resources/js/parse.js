@@ -31,7 +31,7 @@ function parseEQ() {
                     else if(node.op == "-") return SUB;
                     else if(node.op == "^") return POW;
                     else {
-                        errStr += `ERROR: operation "${node.op}" not found\n`;
+                        errStr += `ERROR: operation "${node.op}" not found<br>`;
                         return ERR;
                     }
                   }
@@ -41,7 +41,7 @@ function parseEQ() {
                   console.log(node.type, node.value)
                   if (node.value >= ERR) {
                       // really big floats are reserved for functions and operators
-                      errStr += `ERROR: ${node.value} is a reserved value\n`;
+                      errStr += `ERROR: ${node.value} is a reserved value<br>`;
                       eqnRPN.push(ERR);
                       break;
                   }
@@ -52,10 +52,9 @@ function parseEQ() {
                   console.log(node.type, node.name)
                   if(node.name == "z") eqnRPN.push(Z);
                   else {
-                      errStr += `ERROR: symbol ${node.name} not found`;
-                      return ERR;
+                      errStr += `ERROR: symbol ${node.name} not found<br>`;
+                      eqnRPN.push(ERR);
                   }
-                  eqnRPN.push(Z);
                   break
                 case 'ParenthesisNode':
                   console.log(node.type)
@@ -68,12 +67,11 @@ function parseEQ() {
                     if(node.fn.name == "sin") return SIN;
                       else if(node.fn.name == "cos") return COS;
                       else if(node.fn.name == "tan") return TAN;
-                      else if(node.fn.name == "exp") return EXP;
                       else if(node.fn.name == "sinh") return SINH;
                       else if(node.fn.name == "cosh") return COSH;
-                      else if(node.fn.name == "tanh") return TANH;
+                      else if(node.fn.name == "exp") return EXP;
                       else {
-                          errStr += `ERROR: function ${node.fn.name} not found`;
+                          errStr += `ERROR: function ${node.fn.name} not found<br>`;
                           return ERR;
                       }
                   }

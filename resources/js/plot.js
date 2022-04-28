@@ -73,16 +73,15 @@ function attribArray(gl, prog, XYZ, NOR, RGB, T2D) {
    }
 }
 
-var gl,canvas,condition, width, height, scene, particles;
+var gl,canvas, graphIt, surf;
 function webGLStart()
 {
    //  Set canvas
    canvas = document.getElementById("canvas");
    //  Select canvas size
-   height = innerHeight;
-   width = window.innerWidth;
-   canvas.width  = width;
-   canvas.height = height;
+   var size = Math.min(window.innerWidth, window.innerHeight)-10;
+   canvas.width  = size;
+   canvas.height = size;
    //  Start WebGL
    if (!window.WebGLRenderingContext)
    {
@@ -101,25 +100,9 @@ function webGLStart()
       return;
    }
 
-   //  Set viewport to entire canvas
-   gl.viewport(0,0,width,height);
-
-   //  Load Shader
-   var prog = CompileShaderProg(gl,"shader-vs","shader-fs");
-
-   var cubeProg = CompileShaderProg(gl, "cube-vs", "cube-fs");
-
-   //  Set program
-   gl.useProgram(prog);
-
-   //  Generate data for hill landscape
-   var n = 20;
-   var hills_data = [];
-   createHills(hills_data, n);
-
-   var hills = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER,hills);
-   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(hills_data),gl.STATIC_DRAW);
+   //  Load Shaders
+   var prog = CompileShaderProg(gl,"sphere-vs","sphere-fs");
+   var surfProg = CompileShaderProg(gl, "surface-vs", "sphere-fs");
 
    //  Set state to draw scene
    gl.enable(gl.DEPTH_TEST);
@@ -128,25 +111,35 @@ function webGLStart()
    var x0 = y0 = move  = 0;
    //  Rotation angles
    var th = 0;
-   var ph = 85;
-   //  Draw both scene and particles
-   scene = true;
-   particles = true; 
+   var ph = 85; 
 
-   //generate data for sky sphere
-   var sphere_data = GenerateSphere(n);
+   //generate data for sphere
+   var sphere_data = GenerateSphere(N);
 
-   gl.useProgram(cubeProg);
+   gl.useProgram(prog);
    var sphere = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER,sphere);
-   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(sphere_data), gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(sphere_data), gl.STATIC_DRAW); 
 
-   var cube = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER, cube);
-   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(cube_data), gl.STATIC_DRAW);  
-
+   //  Set first viewport to 1/2 of canvas
+   gl.viewport(0,0,size,size);
+   
    //  Draw scene the first time
-   Display();
+   // Display();
+
+   var plane_data = GeneratePlane(N);
+   gl.useProgram(surfProg);
+   var plane = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, plane);
+   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(plane_data), gl.STATIC_DRAW);
+
+   // Set second viewport to other 1/2 of canvas
+   // gl.viewport(0, size/2, size/2, size);
+   // Display2();
+
+   surf = true;
+   if(surf) Display();
+   else Display2();
 
    //
    //  Display the scene
@@ -161,34 +154,31 @@ function webGLStart()
       var global   = [0.1,0.1,0.1,1.0];
       var ambient  = [0.3,0.3,0.3,1.0];
       var diffuse  = [0.8,0.8,0.8,1.0];
-      var specular = [1.0,1.0,1.0,1.0];
-      var position = [-3,-3,3,1.0];
+      var specular = [0.5,0.5,0.5,1.0];
+      var position = [10.0,1.0,1.0,1.0];
       var fov = 45;
-      var dim = 10;
-      var asp = width/height;
+      var dim = 5;
+      var asp = 1;
 
       // Looking position for perspective
       var Lx = -2*dim*Sin(th)*Sin(ph);
       var Ly = -2*dim        *Cos(ph);
       var Lz = +2*dim*Cos(th)*Sin(ph);
 
-      // Compute matrices
+      // Compute matrices 
       var ViewMatrix = new mat4();
-      ViewMatrix.lookAt(0, func(0, 0) + 1, 0, Lx, Ly, Lz, 0, 1, 0);
-      //ViewMatrix.lookAt(Lx, Ly, Lz, 0, 0, 0, 0, 1, 0); //3rd-person view for debugging
+      ViewMatrix.lookAt(Lx, Ly, Lz, 0, 0, 0, 0, 1, 0);
 
       var ModelviewMatrix = new mat4();
       ModelviewMatrix = ViewMatrix;
-      var ModelMatrixSky = new mat4();
-      ModelMatrixSky.identity();
-      ModelMatrixSky.scale(7, 7, 7);
+      ModelviewMatrix.translate(0, 0, 0);
 
       var ProjectionMatrix = new mat4();
       ProjectionMatrix.perspective(fov, asp, dim/16, 16*dim);
 
       var NormalMatrix = ModelviewMatrix.normalMatrix();
 
-      // Set hills shader
+      // Set shader
       gl.useProgram(prog);
 
       //  Pass uniforms to shader
@@ -204,59 +194,24 @@ function webGLStart()
       gl.uniform4fv(id,specular);
       id = gl.getUniformLocation(prog,"Position");
       gl.uniform4fv(id,position);
+      if(graphIt) {
+         id = gl.getUniformLocation(prog,"function");
+         gl.uniform1fv(id,new Float32Array(eqnRPN));
+      }
 
       gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ProjectionMatrix") , false , ProjectionMatrix.getMat());
       gl.uniformMatrix3fv(gl.getUniformLocation(prog,"NormalMatrix") , false , NormalMatrix);
-      gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ViewMatrix")  , false , ViewMatrix.getMat());
-      gl.uniform1i(gl.getUniformLocation(prog, "tex"), false, tex);
+      gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ModelViewMatrix")  , false , ModelviewMatrix.getMat());
 
-      if(scene) {
-         //  Set hills modelview
-         gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ModelviewMatrix")  , false , ModelviewMatrix.getMat());
-         //  Bind hills buffer
-         gl.bindBuffer(gl.ARRAY_BUFFER,hills);
+
+      if(graphIt) {
+         //  Bind sphere buffer
          var XYZ, NORM, RGB, T2D;
+         gl.bindBuffer(gl.ARRAY_BUFFER, sphere);
          attribArray(gl, prog, XYZ, NORM, RGB, T2D);
 
-         gl.activeTexture(gl.TEXTURE0);
-         gl.bindTexture(gl.TEXTURE_2D,tex);
-
-         //  Draw hills vertexes
-         gl.drawArrays(gl.TRIANGLES,0, n*n*6);
-
-         //  Disable vertex arrays
-         gl.disableVertexAttribArray(XYZ);
-         gl.disableVertexAttribArray(RGB);
-         gl.disableVertexAttribArray(T2D);
-
-         //  Set sky shader
-         gl.useProgram(cubeProg);
-
-         //  Pass uniforms to sky shader
-         gl.uniformMatrix4fv(gl.getUniformLocation(cubeProg,"ProjectionMatrix") , false , ProjectionMatrix.getMat());
-         gl.uniformMatrix3fv(gl.getUniformLocation(cubeProg,"NormalMatrix") , false , NormalMatrix);
-         gl.uniformMatrix4fv(gl.getUniformLocation(cubeProg,"ViewMatrix")  , false , ViewMatrix.getMat());
-         gl.uniformMatrix4fv(gl.getUniformLocation(cubeProg,"ModelMatrix")  , false , ModelMatrixSky.getMat());
-         gl.uniform1i(gl.getUniformLocation(cubeProg, "tex"), false, clear_tex);
-
-         //  Bind sphere buffer
-         gl.bindBuffer(gl.ARRAY_BUFFER, sphere);
-         attribArray(gl, cubeProg, XYZ, NORM, RGB, T2D);
-
-         //  Select texture based on weather conditions
-         gl.activeTexture(gl.TEXTURE0);
-         var texture;
-         if(condition==1000)//sunny
-            texture = clear_tex
-         else if(condition == 1003)//partly cloudy
-            texture = pc_tex;
-         else
-            texture = cloudy_tex;//anything else - cloudy
-         
-         gl.bindTexture(gl.TEXTURE_2D,texture);
-
          //  Draw sphere
-         gl.drawArrays(gl.TRIANGLES,0, n*(n+1)*6);
+         gl.drawArrays(gl.TRIANGLES,0, N*(N+1)*6);
 
          //  Disable vertex arrays
          gl.disableVertexAttribArray(XYZ);
@@ -264,8 +219,84 @@ function webGLStart()
          gl.disableVertexAttribArray(T2D);
       }
 
-      if(particles) {
-         // Draw particles (if current weather requires them)
+      //  Flush
+      gl.flush ();
+
+   }
+
+   function Display2()
+   {
+      //  Clear the screen and Z buffer
+      gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+
+      // Lighting values
+      var global   = [0.1,0.1,0.1,1.0];
+      var ambient  = [0.3,0.3,0.3,1.0];
+      var diffuse  = [0.8,0.8,0.8,1.0];
+      var specular = [0.5,0.5,0.5,1.0];
+      var position = [10.0,1.0,1.0,1.0];
+      var fov = 45;
+      var dim = 5;
+      var asp = 1;
+
+      // Looking position for perspective
+      var Lx = -2*dim*Sin(th)*Sin(ph);
+      var Ly = -2*dim        *Cos(ph);
+      var Lz = +2*dim*Cos(th)*Sin(ph);
+
+      // Compute matrices 
+      var ViewMatrix = new mat4();
+      ViewMatrix.lookAt(Lx, Ly, Lz, 0, 0, 0, 0, 1, 0);
+
+      var ModelviewMatrix = new mat4();
+      ModelviewMatrix = ViewMatrix;
+      ModelviewMatrix.translate(0, 0, 0);
+
+      var ProjectionMatrix = new mat4();
+      ProjectionMatrix.perspective(fov, asp, dim/16, 16*dim);
+
+      var NormalMatrix = ModelviewMatrix.normalMatrix();
+
+      // Set shader
+      gl.useProgram(surfProg);
+
+      //  Pass uniforms to shader
+      var id = gl.getUniformLocation(surfProg,"fov");
+      gl.uniform1f(id,fov);
+      id = gl.getUniformLocation(surfProg,"Global");
+      gl.uniform4fv(id, global);
+      id = gl.getUniformLocation(surfProg,"Ambient");
+      gl.uniform4fv(id,ambient);
+      id = gl.getUniformLocation(surfProg,"Diffuse");
+      gl.uniform4fv(id,diffuse);
+      id = gl.getUniformLocation(surfProg,"Specular");
+      gl.uniform4fv(id,specular);
+      id = gl.getUniformLocation(surfProg,"Position");
+      gl.uniform4fv(id,position);
+      if(graphIt) {
+         id = gl.getUniformLocation(surfProg,"function");
+         gl.uniform1fv(id,new Float32Array(eqnRPN));
+      }
+
+      gl.uniformMatrix4fv(gl.getUniformLocation(surfProg,"ProjectionMatrix") , false , ProjectionMatrix.getMat());
+      gl.uniformMatrix3fv(gl.getUniformLocation(surfProg,"NormalMatrix") , false , NormalMatrix);
+      gl.uniformMatrix4fv(gl.getUniformLocation(surfProg,"ModelViewMatrix")  , false , ModelviewMatrix.getMat());
+
+
+      if(graphIt) {
+         //  Bind sphere buffer
+         var XYZ, NORM, RGB, T2D;
+         gl.bindBuffer(gl.ARRAY_BUFFER, plane);
+         attribArray(gl, surfProg, XYZ, NORM, RGB, T2D);
+
+         //  Draw surface
+         gl.drawArrays(gl.TRIANGLES,0, 6*(N-1)*N);
+
+         //  Disable vertex arrays
+         gl.disableVertexAttribArray(XYZ);
+         gl.disableVertexAttribArray(RGB);
+         gl.disableVertexAttribArray(T2D);
       }
 
       //  Flush
@@ -278,12 +309,11 @@ function webGLStart()
    //
    canvas.resize = function ()
    {
-      width = window.innerWidth
-      height = window.innerHeight
-      canvas.width  = width;
-      canvas.height = height;
-      gl.viewport(0,0,width,height);
-      Display();
+      var size = Math.min(window.innerWidth, window.innerHeight)-10;
+      canvas.width  = size;
+      canvas.height = size;
+      if(surf) Display();
+      else Display2();
    }
 
    //
@@ -319,44 +349,45 @@ function webGLStart()
       x0 = ev.clientX;
       y0 = ev.clientY;
       //  Redisplay
-      Display();
+      var size = Math.min(window.innerWidth, window.innerHeight)-10;
+      canvas.width  = size;
+      canvas.height = size;
+      // gl.viewport(0,0,size/2,size);
+      // Display();
+      // gl.viewport(size/2,0,size/2,size);
+      // Display2();
+      if(surf) Display();
+      else Display2();
+   } 
+
+   var button = document.getElementById("graph-it")
+   button.onclick = function() {
+      document.getElementById("error").innerHTML = errStr;
+      graphIt = true;
+      var size = Math.min(window.innerWidth, window.innerHeight)-10;
+      canvas.width  = size;
+      canvas.height = size;
+      // gl.viewport(0,0,size/2,size);
+      // Display();
+      // gl.viewport(size/2,0,size/2,size);
+      // Display2();
+      if(surf) Display();
+      else Display2();
    }
 
-   var sceneCheck = document.getElementById("scene");
-   sceneCheck.onclick = function() {
-      scene = sceneCheck.checked;
+   document.getElementById("sphere").onclick = function () {
+      surf = true;
       Display();
    }
-
-   var partCheck = document.getElementById("particles");
-   partCheck.onclick = function() {
-      particles = partCheck.checked;
-      Display();
-   }
-
-   //make api call to weatherapi.com
-   var button = document.getElementById("search");
-   button.onclick = function()
-   {
-      var location = document.getElementById("place").value;
-      var url = `http://api.weatherapi.com/v1/current.json?key=${WEATHER_KEY}&q=${location}`;
-      window.fetch(url)
-      .then(function(response) {
-         return response.json();
-      }).then(function(data) {
-         console.log(data);
-         document.getElementById("city").innerHTML = data.location.name;
-         document.getElementById("region").innerHTML = data.location.region;
-         document.getElementById("temperature").innerHTML = `${data.current.temp_f} &deg; F`
-         document.getElementById("condition").innerHTML = data.current.condition.text;
-         condition = data.current.condition.code;
-         Display();
-      }).catch(function(error) {
-         console.log(error);
-         document.getElementById("error").innerHTML = "error retrieving weather data";
-      });
+   document.getElementById("surface").onclick = function () {
+      surf = false;
+      Display2();
    }
 }
+
+
+
+
 
 /*
 

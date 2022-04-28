@@ -23,29 +23,29 @@ const LOG = HexToFloat32("0x7f7ffffa");
 const SQRT = HexToFloat32("0x7f7ffff9");
 const POW = HexToFloat32("0x7f7ffff8");
 const SIN = HexToFloat32("0x7f7ffff7");
-const COS = HexToFloat32("0x7f7fff6");
+const COS = HexToFloat32("0x7f7ffff6");
 const TAN = HexToFloat32("0x7f7ffff5");
 const SINH = HexToFloat32("0x7f7ffff4");
 const COSH = HexToFloat32("0x7f7ffff3");
-const TANH = HexToFloat32("0x7f7ffff2");
+const EXP = HexToFloat32("0x7f7ffff2");
 const END = HexToFloat32("0x7f7ffff1");
 const ERR = HexToFloat32("0x7f7ffff0");
 
-//maximum equation array size
+// maximum equation array size
 const MAX_SIZE = 20;
 
+// number of vertices per row in surface and sphere
+var N = 24;
+
+// display error on page and console
 const ThrowErr = (err) => {
     console.log(err);
     document.getElementById("error").innerHTML = err;
 }
 
-function Sin(th) {
-    return Math.sin(th * Math.PI / 180)
-}
- 
-function Cos(th) {
-    return Math.cos(th * Math.PI / 180)
-}
+// trig functions in degrees
+const Sin = (th) => Math.sin(th * Math.PI / 180)
+const Cos = (th) => Math.cos(th * Math.PI / 180)
 
 function SphereVertex(data, th, ph) {
     var x = Cos(th)*Cos(ph);
@@ -61,9 +61,9 @@ function SphereVertex(data, th, ph) {
     data.push(y);
     data.push(z);
     //color
-    data.push(x);
-    data.push(y);
-    data.push(z);
+    data.push(1);
+    data.push(1);
+    data.push(1);
     data.push(1);
     //texture
     data.push(th/360*2);
@@ -94,5 +94,48 @@ function GenerateSphere(n) {
        }
     }
     return sphere_data;
+}
+
+function PlaneVertex(data, x, z) {
+    //vertex
+    data.push(x);
+    data.push(0);
+    data.push(z);
+    data.push(1);
+    //normal
+    data.push(0);
+    data.push(1);
+    data.push(0);
+    //color
+    data.push(1);
+    data.push(1);
+    data.push(1);
+    data.push(1);
+    //texture
+    data.push(x);
+    data.push(z);
+
+    return data;
+}
+
+function GeneratePlane(n) {
+    var plane_data = [];
+    for (var i = 0; i < n; i++) {
+        var x1 = 2*i/n-1;
+        var x2 = 2*(i+1)/n-1;
+        for (var j = 0; j < n; j++) {
+            var z1 = 2*j/n-1;
+            var z2 = 2*(j+1)/n-1;
+            console.log(x1, z1);
+            plane_data = PlaneVertex(plane_data, x1, z1);
+            plane_data = PlaneVertex(plane_data, x1, z2);
+            plane_data = PlaneVertex(plane_data, x2, z1);
+
+            plane_data = PlaneVertex(plane_data, x1, z2);
+            plane_data = PlaneVertex(plane_data, x2, z1);
+            plane_data = PlaneVertex(plane_data, x2, z2);
+        }
+    }
+    return plane_data;
 }
 
