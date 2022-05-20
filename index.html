@@ -255,7 +255,7 @@
 
       //COS f(z) = cos(z)
       vec2 Cos(vec2 z) {
-        return vec2(cosh(z.y)*cos(z.x), sinh(z.y)*sin(z.x));
+        return vec2(cosh(z.y)*cos(z.x), -sinh(z.y)*sin(z.x));
       }
 
       //TAN f(z) = tan(z)
@@ -519,7 +519,7 @@
 
       //COS f(z) = cos(z)
       vec2 Cos(vec2 z) {
-        return vec2(cosh(z.y)*cos(z.x), sinh(z.y)*sin(z.x));
+        return vec2(cosh(z.y)*cos(z.x), -sinh(z.y)*sin(z.x));
       }
 
       //TAN f(z) = tan(z)
@@ -629,7 +629,7 @@
       void main(void)
       {
         vec2 z = parseRPN(vec2(Vertex.x, Vertex.z));
-        vec4 newPos = vec4(Vertex.x, rth(z).x/10.0, Vertex.z, Vertex.w);
+        vec4 newPos = vec4(Vertex.x, rth(z).x/5.0, Vertex.z, Vertex.w);
         //vec3 newNorm = cross(newPos.xyz, vec3(Vertex.x + 1.0/24.0, rth(vec2(z.x+1.0/24.0,z.y)).x/50.0, Vertex.z));
         gl_Position = ProjectionMatrix * ModelViewMatrix * newPos;
         LightIntensity = phong();
