@@ -36,10 +36,10 @@ export const Canvas = observer(() => {
       renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
       canvasParent.appendChild(renderer.domElement);
 
-      const geometry = new THREE.PlaneGeometry(5, 5, 100, 100);
+      const geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
 
-      const expression = appModel.inputValue;
       try {
+        const expression = appModel.inputValue;
         const glslExpression = parseFunction(expression);
 
         appModel.state = 'good';
@@ -52,7 +52,7 @@ export const Canvas = observer(() => {
         const plane = new THREE.Mesh(geometry, material);
         scene.add(plane);
 
-        const axesHelper = new THREE.AxesHelper(5)
+        const axesHelper = new THREE.AxesHelper(5);
         scene.add(axesHelper);
 
         camera.position.z = 5;

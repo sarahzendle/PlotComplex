@@ -3,7 +3,7 @@ import { makeAutoObservable, reaction } from 'mobx';
 export class AppModel {
   state: 'good' | 'bad' = 'good';
 
-  inputValue = 'sin(z)';
+  inputValue = '(((((z^2 + z)^2 + z)^2 + z)^2 + z)^2 + z)^2 + z';
 
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });

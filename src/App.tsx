@@ -38,6 +38,8 @@ const App = observer(() => {
                 appModel.inputValue = e.currentTarget.value;
               })}
               css={{
+                width: '100%',
+                height: 30,
                 border: appModel.state === 'good' ? '1px solid black' : '1px solid red',
                 '&:active, &:focus': {
                   outline: 'none',
@@ -46,7 +48,6 @@ const App = observer(() => {
               }}
               type="text"
             />
-            <button css={{ padding: 5 }}>Plot</button>
           </div>
           <div css={flexValue(1)}>
             <Canvas />
