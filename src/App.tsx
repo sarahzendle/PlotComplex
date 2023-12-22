@@ -1,5 +1,5 @@
 import './styles/css/App.css';
-import { Card } from './components';
+import { Card, Canvas } from './components';
 import { AppModel } from './models/AppModel';
 
 import {
@@ -12,18 +12,12 @@ import {
   padding,
 } from './styles';
 
-import utilsGlsl from './glsl/utils.glsl';
-import { Canvas } from './components/Canvas';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 
 export const appModel = new AppModel();
 
-console.log(utilsGlsl);
-
 const App = observer(() => {
-  console.log(appModel.state);
-
   return (
     <div css={[absolute(), fullSize, flexCenter]}>
       <Card

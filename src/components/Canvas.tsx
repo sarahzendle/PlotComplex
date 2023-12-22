@@ -52,7 +52,7 @@ export const Canvas = observer(() => {
         const plane = new THREE.Mesh(geometry, material);
         scene.add(plane);
 
-        const axesHelper = new THREE.AxesHelper(5);
+        const axesHelper = new THREE.AxesHelper(1);
         scene.add(axesHelper);
 
         camera.position.z = 5;
