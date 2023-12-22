@@ -6,6 +6,9 @@ import { fullSize } from '../styles';
 import { getFragmentShader, getVertexShader } from '../glsl';
 
 import { parseFunction } from '../compiler/main';
+import { appModel } from '../App';
+import { observer } from 'mobx-react-lite';
+import { action } from 'mobx';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -21,45 +24,59 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
-export function Canvas() {
+export const Canvas = observer(() => {
   const canvasParentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!canvasParentRef.current) return;
+  useEffect(
+    action(() => {
+      if (!canvasParentRef.current) return;
 
-    const canvasParent = canvasParentRef.current;
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
-    canvasParent.appendChild(renderer.domElement);
+      const canvasParent = canvasParentRef.current;
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
+      canvasParent.appendChild(renderer.domElement);
 
-    const geometry = new THREE.PlaneGeometry(5, 5, 100, 100);
+      const geometry = new THREE.PlaneGeometry(5, 5, 100, 100);
 
-    const expression = 'sin(z)';
-    const glslExpression = parseFunction(expression);
+      const expression = appModel.inputValue;
+      try {
+        const glslExpression = parseFunction(expression);
 
-    const material = new THREE.ShaderMaterial({
-      vertexShader: getVertexShader(glslExpression),
-      fragmentShader: getFragmentShader(),
-    });
-    const plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
+        appModel.state = 'good';
 
-    scene.add(new THREE.AxesHelper(5));
+        const material = new THREE.ShaderMaterial({
+          vertexShader: getVertexShader(glslExpression),
+          fragmentShader: getFragmentShader(),
+          side: THREE.DoubleSide,
+        });
+        const plane = new THREE.Mesh(geometry, material);
+        scene.add(plane);
 
-    camera.position.z = 5;
+        const axesHelper = new THREE.AxesHelper(5)
+        scene.add(axesHelper);
 
-    const animate = function () {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
+        camera.position.z = 5;
 
-    animate();
+        const animate = function () {
+          requestAnimationFrame(animate);
+          controls.update();
+          renderer.render(scene, camera);
+        };
 
-    return () => {
-      canvasParent.removeChild(renderer.domElement);
-    };
-  }, []);
+        animate();
+
+        return () => {
+          canvasParent.removeChild(renderer.domElement);
+          scene.remove(plane);
+          scene.remove(axesHelper);
+        };
+      } catch (e) {
+        appModel.state = 'bad';
+        console.error(e);
+      }
+    }),
+    [appModel.inputValue],
+  );
 
   useEffect(() => {
     if (!canvasParentRef.current) return;
@@ -89,4 +106,4 @@ export function Canvas() {
   }, []);
 
   return <div css={[fullSize]} ref={canvasParentRef} />;
-}
+});

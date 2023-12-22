@@ -5,7 +5,7 @@ varying vec3 vUv;
 void main() {
     vec2 injectedEq = /* !EXPRESSION! */;
 
-    vec3 newPosition = vec3(position.x, injectedEq.x, injectedEq.y);
+    vec3 newPosition = vec3(injectedEq.x, position.y, injectedEq.y);
 
     // vUv = position; 
     vUv = newPosition;

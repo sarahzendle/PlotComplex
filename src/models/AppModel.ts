@@ -1,9 +1,24 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, reaction } from 'mobx';
 
 export class AppModel {
-    constructor() {
-        makeAutoObservable(this, {}, {autoBind: true})
+  state: 'good' | 'bad' = 'good';
+
+  inputValue = 'sin(z)';
+
+  constructor() {
+    makeAutoObservable(this, {}, { autoBind: true });
+    const storedInputValue = localStorage.getItem('inputValue');
+
+    if (storedInputValue) {
+      this.inputValue = storedInputValue;
     }
 
-    
+    reaction(
+      () => this.inputValue,
+      (inputValue) => {
+        console.log('set');
+        localStorage.setItem('inputValue', inputValue);
+      },
+    );
+  }
 }
