@@ -5,7 +5,7 @@ export function getVertexShader(injection = 'position'): string {
   const search = '/* !EXPRESSION! */';
   const output = mainGlsl.replaceAll(search, injection);
 
-  console.log(output);
+  // console.log(output);
   return output;
 }
 
