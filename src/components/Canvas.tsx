@@ -1,3 +1,4 @@
+import * as math from 'mathjs';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -5,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import { fullSize } from '../styles';
 import { getFragmentShader, getVertexShader } from '../glsl';
 
-import { parseFunction } from '../compiler/main';
+import { nodeToGLSL, nodeToJS } from '../compiler/main';
 import { appModel } from '../App';
 import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
@@ -36,21 +37,32 @@ export const Canvas = observer(() => {
       renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
       canvasParent.appendChild(renderer.domElement);
 
-      const geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
-
+      
+      
+      
       try {
         const expression = appModel.inputValue;
-        const glslExpression = parseFunction(expression);
+        const fnNode = math.parse(expression);
 
+        console.log(nodeToJS(fnNode, 0))
+        
         appModel.state = 'good';
-
-        const material = new THREE.ShaderMaterial({
-          vertexShader: getVertexShader(glslExpression),
-          fragmentShader: getFragmentShader(),
-          side: THREE.DoubleSide,
-        });
-        const plane = new THREE.Mesh(geometry, material);
-        scene.add(plane);
+        
+        
+        const sheetsCount = 6;
+        const planes: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial, THREE.Object3DEventMap>[] = [];
+        for (let i = 0; i < sheetsCount; i++) {
+          const glslExpression = nodeToGLSL(fnNode, i);
+          const geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
+          const material = new THREE.ShaderMaterial({
+            vertexShader: getVertexShader(glslExpression),
+            fragmentShader: getFragmentShader(),
+            side: THREE.DoubleSide,
+          });
+          const plane = new THREE.Mesh(geometry, material);
+          planes.push(plane)
+          scene.add(plane);
+        }
 
         const axesHelper = new THREE.AxesHelper(1);
         scene.add(axesHelper);
@@ -67,7 +79,7 @@ export const Canvas = observer(() => {
 
         return () => {
           canvasParent.removeChild(renderer.domElement);
-          scene.remove(plane);
+          planes.forEach(plane => scene.remove(plane));
           scene.remove(axesHelper);
         };
       } catch (e) {
@@ -96,10 +108,8 @@ export const Canvas = observer(() => {
       updateSize();
     });
 
-    // Start observing the parent element
     resizeObserver.observe(canvasParent);
 
-    // Clean up
     return () => {
       resizeObserver.unobserve(canvasParent);
     };
