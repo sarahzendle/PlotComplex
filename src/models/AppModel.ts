@@ -5,6 +5,10 @@ export class AppModel {
 
   inputValue = '(((((z^2 + z)^2 + z)^2 + z)^2 + z)^2 + z)^2 + z';
 
+  // plotType controls which visualization the renderer should use.
+  // Keep in sync with localStorage like `inputValue`.
+  plotType: 'surface' | 'sphere' = 'surface';
+
   constructor() {
     makeAutoObservable(this, {}, { autoBind: true });
     const storedInputValue = localStorage.getItem('inputValue');
@@ -13,11 +17,28 @@ export class AppModel {
       this.inputValue = storedInputValue;
     }
 
+  const storedPlotType = localStorage.getItem('plotType');
+  const allowedPlotTypes = ['surface', 'sphere'] as const;
+    if ((storedPlotType) && allowedPlotTypes.includes(storedPlotType as any)) {
+      // safe to assign since we've validated the string
+      console.log('loaded plot type from storage:', storedPlotType);
+      this.plotType = storedPlotType as typeof this.plotType;
+    }
+
     reaction(
       () => this.inputValue,
       (inputValue) => {
-        console.log('set');
+        console.log('set input equation');
+        console.log(this.plotType);
         localStorage.setItem('inputValue', inputValue);
+      },
+    );
+
+    reaction(
+      () => this.plotType,
+      (plotType) => {
+        console.log('set plot type: ', this.plotType);
+        localStorage.setItem('plotType', plotType);
       },
     );
   }

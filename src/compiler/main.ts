@@ -54,7 +54,7 @@ function nodeToGLSL(node: math.MathNode): string {
       return `vec2(0.0, position.y)`;
     }
 
-    console.log(node);
+    // console.log(node);
   } else if (math.isFunctionNode(node)) {
     const fnName = node.fn.name;
     const args = node.args.map((arg) => nodeToGLSL(arg));

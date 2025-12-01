@@ -25,6 +25,7 @@ const App = observer(() => {
       >
         <div css={[fullSize, flexColumn, { gap: 10 }]}>
           <div css={[flex('row'), { gap: 10 }]}>
+            Enter a complex function of z:
             <input
               value={appModel.inputValue}
               placeholder="sin(1/z)"
@@ -42,6 +43,29 @@ const App = observer(() => {
               }}
               type="text"
             />
+          </div>
+          <div css={[flex('row'), { gap: 10 }]}>
+            Select plot type:
+            <input
+              type="radio"
+              id="Surface"
+              name="plotType"
+              value="Surface"
+              checked={appModel.plotType === 'surface'}
+              onChange={action((e) => {
+                appModel.plotType = 'surface';
+              })}/>
+            <label htmlFor="Surface">Surface (Magnitude = Height)</label>
+            <input
+              type="radio"
+              id="Sphere"
+              name="plotType"
+              value="Sphere"
+              checked={appModel.plotType === 'sphere'}
+              onChange={action((e) => {
+                appModel.plotType = 'sphere';
+              })}/>
+            <label htmlFor="Sphere">Sphere (Stereographic Projection)</label>
           </div>
           <div css={flexValue(1)}>
             <Canvas />

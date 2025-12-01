@@ -11,6 +11,7 @@ import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color('gray'); 
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -32,11 +33,22 @@ export const Canvas = observer(() => {
       if (!canvasParentRef.current) return;
 
       const canvasParent = canvasParentRef.current;
+      var geometry: THREE.BufferGeometry;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
       canvasParent.appendChild(renderer.domElement);
 
-      const geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
+      const plotType = appModel.plotType;
+      if( plotType == 'surface') {
+        geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
+      }
+      else if( plotType == 'sphere') {
+        geometry = new THREE.SphereGeometry(1, 250, 250);
+        geometry.translate(0, 1, 0);
+      }
+      else {
+        throw new Error(`Plot type '${plotType}' is not supported`);
+      }
 
       try {
         const expression = appModel.inputValue;
@@ -45,12 +57,12 @@ export const Canvas = observer(() => {
         appModel.state = 'good';
 
         const material = new THREE.ShaderMaterial({
-          vertexShader: getVertexShader(glslExpression),
-          fragmentShader: getFragmentShader(),
+          vertexShader: getVertexShader(glslExpression, appModel.plotType),
+          fragmentShader: getFragmentShader(glslExpression, plotType),
           side: THREE.DoubleSide,
         });
-        const plane = new THREE.Mesh(geometry, material);
-        scene.add(plane);
+        const geom = new THREE.Mesh(geometry, material);
+        scene.add(geom);
 
         const axesHelper = new THREE.AxesHelper(1);
         scene.add(axesHelper);
@@ -67,7 +79,7 @@ export const Canvas = observer(() => {
 
         return () => {
           canvasParent.removeChild(renderer.domElement);
-          scene.remove(plane);
+          scene.remove(geom);
           scene.remove(axesHelper);
         };
       } catch (e) {
@@ -75,7 +87,7 @@ export const Canvas = observer(() => {
         console.error(e);
       }
     }),
-    [appModel.inputValue],
+    [appModel.inputValue, appModel.plotType],
   );
 
   useEffect(() => {
