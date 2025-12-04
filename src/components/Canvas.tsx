@@ -11,13 +11,15 @@ import { observer } from 'mobx-react-lite';
 import { action } from 'mobx';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('gray'); 
+scene.background = new THREE.Color('gray');
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000,
 );
+camera.up.set(0, -1, 0); //left-handed coordinate system
+camera.position.set(5, -3, 5);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -33,16 +35,22 @@ export const Canvas = observer(() => {
       if (!canvasParentRef.current) return;
 
       const canvasParent = canvasParentRef.current;
+
+      //need a left-handed coordinate system to match math convention
+      let flipGroup = new THREE.Group();
+      flipGroup.scale.y = -1;
+      scene.add(flipGroup);
+
       var geometry: THREE.BufferGeometry;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(canvasParent.clientWidth, canvasParent.clientHeight);
       canvasParent.appendChild(renderer.domElement);
 
       const plotType = appModel.plotType;
-      if( plotType == 'surface') {
+      if (plotType == 'surface') {
         geometry = new THREE.PlaneGeometry(9, 9, 250, 250);
       }
-      else if( plotType == 'sphere') {
+      else if (plotType == 'sphere') {
         geometry = new THREE.SphereGeometry(1, 250, 250);
         geometry.translate(0, 1, 0);
       }
@@ -62,12 +70,10 @@ export const Canvas = observer(() => {
           side: THREE.DoubleSide,
         });
         const geom = new THREE.Mesh(geometry, material);
-        scene.add(geom);
+        flipGroup.add(geom);
 
         const axesHelper = new THREE.AxesHelper(1);
-        scene.add(axesHelper);
-
-        camera.position.z = 5;
+        flipGroup.add(axesHelper);
 
         const animate = function () {
           requestAnimationFrame(animate);
