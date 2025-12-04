@@ -22,7 +22,7 @@ export class AppModel {
     if ((storedPlotType) && allowedPlotTypes.includes(storedPlotType as any)) {
       // safe to assign since we've validated the string
       console.log('loaded plot type from storage:', storedPlotType);
-      this.plotType = storedPlotType as typeof this.plotType;
+      this.plotType = storedPlotType as 'surface' | 'sphere';
     }
 
     reaction(
